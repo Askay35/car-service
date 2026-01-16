@@ -77,7 +77,7 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-
+        
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
