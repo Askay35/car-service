@@ -1,0 +1,46 @@
+services:
+  test-postgres:
+    image: postgres:16-alpine
+    container_name: test-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-db}
+      POSTGRES_USER: ${DB_USERNAME:-guest}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-guest}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-guest}"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+  test-backend:
+    build: .
+    container_name: test-backend
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+    networks:
+      - test-network
+    env_file:
+      - .env
+    command: sh -c "php artisan config:clear && php artisan cache:clear && php artisan migrate:fresh && php artisan serve --host=0.0.0.0 --port=8000"
+  
+volumes:
+  test-postgres-data:
+
+networks:
+ test-network:
+    driver: bridge
+
